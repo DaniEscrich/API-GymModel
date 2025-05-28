@@ -28,6 +28,9 @@ class User
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $imagenBase64 = null;
+
     /**
      * @var Collection<int, Progress>
      */
@@ -85,6 +88,17 @@ class User
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getImagenBase64(): ?string
+    {
+        return $this->imagenBase64;
+    }
+
+    public function setImagenBase64(?string $imagenBase64): static
+    {
+        $this->imagenBase64 = $imagenBase64;
         return $this;
     }
 

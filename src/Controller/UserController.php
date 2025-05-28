@@ -69,4 +69,24 @@ class UserController extends AbstractController
             'createdAt' => $user->getCreatedAt()->format('Y-m-d H:i:s')
         ]);
     }
+    #[Route('/api/perfil/imagen/{id}', name: 'actualizar_imagen_perfil', methods: ['POST'])]
+    public function actualizarImagenPerfil(int $id, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['imagenBase64'])) {
+            return $this->json(['error' => 'Falta la imagen'], 400);
+        }
+
+        $user = $em->getRepository(User::class)->find($id);
+        if (!$user) {
+            return $this->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        $user->setImagenBase64($data['imagenBase64']);
+        $em->flush();
+
+        return $this->json(['message' => 'Imagen actualizada correctamente']);
+    }
+
 }

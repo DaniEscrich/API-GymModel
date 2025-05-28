@@ -28,10 +28,10 @@ Eres un experto en fitness y nutrición. Genera dos planes personalizados y brev
 Muestra el resultado en DOS SECCIONES CLARAS y CON FORMATO LIMPIO:
 
 1. PLAN DE ENTRENAMIENTO:
-- Lunes: [máximo 3-6 líneas con ejercicios concretos o descanso]
+- Lunes: [máximo 3-5 líneas con ejercicios concretos o descanso]
 - Martes: ...
 - Miércoles: ...
-(Hasta el número de días disponibles: {$data['dias']})
+(Hasta el número de días disponibles, si te digo por ejemplo 3 dias solo 3 dias los que tu quieres si es lunes martes miercoles pues solo esos 3, no me digas de más hazlo de estos días : {$data['dias']})
 
 2. PLAN DE COMIDAS:
 - Lunes:
@@ -54,8 +54,6 @@ Objetivo: {$data['objetivo']}
 Nivel: {$data['nivel']}
 PROMPT;
 
-
-
         try {
             $response = $this->httpClient->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
                 'headers' => [
@@ -76,7 +74,33 @@ PROMPT;
 
             return new JsonResponse(['respuesta' => $content]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Error al conectar con la IA: ' . $e->getMessage()], 500);
+            // Plan de emergencia si falla la API
+            $planFallback = <<<PLAN
+    🏋️ PLAN DE ENTRENAMIENTO:
+    - Lunes: Sentadillas, press banca y abdominales.
+    - Miércoles: Cardio 30 minutos y flexiones.
+    - Viernes: Dominadas, remo con mancuerna y zancadas.
+    
+    🍽️ PLAN DE COMIDAS:
+    - Lunes:
+      - Desayuno: Avena con plátano.
+      - Comida: Pollo con arroz integral.
+      - Merienda: Yogur natural con nueces.
+      - Cena: Ensalada mixta y tortilla francesa.
+    - Martes:
+      - Desayuno: Tostadas con aguacate.
+      - Comida: Lentejas con verduras.
+      - Merienda: Fruta y queso fresco.
+      - Cena: Crema de calabaza y pescado blanco.
+    - Miércoles:
+      - Desayuno: Batido de proteínas y tostadas.
+      - Comida: Pasta integral con atún.
+      - Merienda: Galletas integrales y leche.
+      - Cena: Verduras al vapor y pechuga de pollo.
+    PLAN;
+
+            return new JsonResponse(['respuesta' => $planFallback]);
         }
     }
 }
+
