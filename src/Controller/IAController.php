@@ -21,52 +21,84 @@ class IAController extends AbstractController
     public function generatePlan(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+        $tipo = $data['tipo'] ?? 'entrenamiento';
 
-        $prompt = <<<PROMPT
-Eres un experto en fitness y nutrición. Genera dos planes personalizados y breves, ideales para mostrar en una app móvil.
+        $diasTexto = $data['dias'] ?? 3;
 
-Muestra el resultado en DOS SECCIONES CLARAS y CON FORMATO LIMPIO:
+        if ($tipo === 'entrenamiento') {
+            $prompt = <<<PROMPT
+Eres un entrenador personal profesional. Genera un PLAN DE ENTRENAMIENTO en formato PLANO y ESTRICTO para una app Android. NO incluyas explicaciones, enlaces, gifs, imágenes, emojis ni texto adicional. SOLO EL PLAN.
 
-1. PLAN DE ENTRENAMIENTO:
-- Lunes: [máximo 3-5 líneas con ejercicios concretos o descanso]
-- Martes: ...
-- Miércoles: ...
-(Hasta el número de días disponibles, si te digo por ejemplo 3 dias solo 3 dias los que tu quieres si es lunes martes miercoles pues solo esos 3, no me digas de más hazlo de estos días : {$data['dias']})
+🎯 FORMATO REQUERIDO:
+- Cada día empieza en una línea aparte con "DÍA X:" (todo en mayúsculas).
+- Las líneas siguientes deben tener este formato:
+  - Nombre del ejercicio | repeticiones x series 
 
-2. PLAN DE COMIDAS:
-- Lunes:
-  - Desayuno: [1 línea]
-  - Comida: [1 línea]
-  - Merienda: [1 línea]
-  - Cena: [1 línea]
-- Martes:
-  ...
-(Hasta domingo)
+📌 IMPORTANTE: Genera exactamente {$diasTexto} días, ni más ni menos.
 
-RESPONDE EN ESPAÑOL. No des explicaciones ni introducciones. Usa saltos de línea. Sé concreto y directo.
+✅ EJEMPLO DE SALIDA:
+DÍA 1:
+- Flexiones | 15 reps x3 
+- Sentadillas | 12 reps x3
+DÍA 2:
+- Plancha | 3x30s
 
-DATOS DEL USUARIO:
+📋 DATOS DEL USUARIO:
 Sexo: {$data['sexo']}
 Edad: {$data['edad']}
 Altura: {$data['altura']} cm
 Peso: {$data['peso']} kg
 Objetivo: {$data['objetivo']}
 Nivel: {$data['nivel']}
+Días de entrenamiento: {$data['dias']}
 PROMPT;
+        } elseif ($tipo === 'comida') {
+            $prompt = <<<PROMPT
+Eres un nutricionista profesional. Genera un PLAN DE COMIDAS semanal en formato PLANO, SIMPLE y CLARO para una app Android. No incluyas explicaciones, imágenes, emojis ni texto adicional. SOLO EL PLAN.
+
+🍽️ FORMATO REQUERIDO:
+- Cada bloque comienza con "DÍA X:" en mayúsculas.
+- Justo debajo, lista las comidas del día en este formato:
+  - Desayuno | ...
+  - Comida | ...
+  - Merienda | ...
+  - Cena | ...
+
+📌 IMPORTANTE: Genera exactamente {$diasTexto} días, ni más ni menos.
+
+✅ EJEMPLO DE SALIDA:
+DÍA 1:
+- Desayuno | Avena con plátano
+- Comida | Arroz con pollo
+- Merienda | Yogur natural con nueces
+- Cena | Ensalada de atún
+
+📋 DATOS DEL USUARIO:
+Sexo: {$data['sexo']}
+Edad: {$data['edad']}
+Altura: {$data['altura']} cm
+Peso: {$data['peso']} kg
+Objetivo: {$data['objetivo']}
+Nivel: {$data['nivel']}
+Días de entrenamiento: {$data['dias']}
+PROMPT;
+        } else {
+            return new JsonResponse(['error' => 'Tipo no válido'], 400);
+        }
 
         try {
-            $response = $this->httpClient->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+            $response = $this->httpClient->request('POST', 'https://api.openai.com/v1/chat/completions', [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $_ENV['OPENROUTER_API_KEY'],
+                    'Authorization' => 'Bearer ' . $_ENV['OPENAI_API_KEY'],
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
-                    'model' => 'mistralai/mistral-7b-instruct:free',
+                    'model' => 'gpt-4o-mini',
                     'messages' => [
                         ['role' => 'user', 'content' => $prompt]
                     ],
-                    'temperature' => 0.7,
-                ]
+                    'temperature' => 0.6,
+                ],
             ]);
 
             $result = $response->toArray();
@@ -74,33 +106,17 @@ PROMPT;
 
             return new JsonResponse(['respuesta' => $content]);
         } catch (\Exception $e) {
-            // Plan de emergencia si falla la API
-            $planFallback = <<<PLAN
-    🏋️ PLAN DE ENTRENAMIENTO:
-    - Lunes: Sentadillas, press banca y abdominales.
-    - Miércoles: Cardio 30 minutos y flexiones.
-    - Viernes: Dominadas, remo con mancuerna y zancadas.
-    
-    🍽️ PLAN DE COMIDAS:
-    - Lunes:
-      - Desayuno: Avena con plátano.
-      - Comida: Pollo con arroz integral.
-      - Merienda: Yogur natural con nueces.
-      - Cena: Ensalada mixta y tortilla francesa.
-    - Martes:
-      - Desayuno: Tostadas con aguacate.
-      - Comida: Lentejas con verduras.
-      - Merienda: Fruta y queso fresco.
-      - Cena: Crema de calabaza y pescado blanco.
-    - Miércoles:
-      - Desayuno: Batido de proteínas y tostadas.
-      - Comida: Pasta integral con atún.
-      - Merienda: Galletas integrales y leche.
-      - Cena: Verduras al vapor y pechuga de pollo.
-    PLAN;
+            $fallback = <<<PLAN
+DÍA 1:
+- Sentadillas | 3x12
+- Flexiones | 3x10
 
-            return new JsonResponse(['respuesta' => $planFallback]);
+DÍA 2:
+- Zancadas | 3x12
+- Plancha | 3x30s
+PLAN;
+
+            return new JsonResponse(['respuesta' => $fallback]);
         }
     }
 }
-

@@ -29,18 +29,18 @@ Respóndelo directamente, en español, sin introducción.
 PROMPT;
 
         try {
-            $response = $this->httpClient->request('POST', 'https://openrouter.ai/api/v1/chat/completions', [
+            $response = $this->httpClient->request('POST', 'https://api.openai.com/v1/chat/completions', [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $_ENV['OPENROUTER_API_KEY'],
+                    'Authorization' => 'Bearer ' . $_ENV['OPENAI_API_KEY'],
                     'Content-Type' => 'application/json',
                 ],
                 'json' => [
-                    'model' => 'mistralai/mistral-7b-instruct:free',
+                    'model' => 'gpt-4o-mini',
                     'messages' => [
                         ['role' => 'user', 'content' => $prompt]
                     ],
                     'temperature' => 0.6,
-                ]
+                ],
             ]);
 
             $result = $response->toArray();
@@ -48,7 +48,9 @@ PROMPT;
 
             return new JsonResponse(['respuesta' => $content]);
         } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Error al generar el consejo: ' . $e->getMessage()], 500);
+            return new JsonResponse([
+                'respuesta' => '💡 Consejo del día: Nunca subestimes el poder de la constancia. ¡Sigue adelante!'
+            ]);
         }
     }
 }
