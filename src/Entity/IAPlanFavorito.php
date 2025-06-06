@@ -66,5 +66,5 @@ class IAPlanFavorito
 
         return $this;
     }
-    
+
 }
